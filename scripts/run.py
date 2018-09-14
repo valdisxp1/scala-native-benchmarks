@@ -61,8 +61,9 @@ benchmarks = [
 ]
 
 configurations = [
-        'jvm',
-        'scala-native-0.3.7',
+        #'jvm',
+        #'scala-native-0.3.7',
+        'scala-native-0.3.9-SNAPSHOT',
 ]
 
 if 'GRAALVM_HOME' in os.environ:
@@ -71,7 +72,7 @@ if 'GRAALVM_HOME' in os.environ:
             'native-image-pgo',
     ]
 
-runs = 20
+runs = 1
 batches = 3000
 batch_size = 1
 
