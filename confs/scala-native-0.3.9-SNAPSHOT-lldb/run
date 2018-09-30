@@ -1,1 +1,1 @@
-"lldb" "-b" "-o" "r" "-k" "bt" "-k" "q" target/scala-2.11/scala-native-benchmarks-out
+lldb -b -o r -k bt -k q target/scala-2.11/scala-native-benchmarks-out
