@@ -50,21 +50,21 @@ def compile(bench, compilecmd):
 sbt = where('sbt')
 
 benchmarks = [
-    'bounce.BounceBenchmark',
-    'list.ListBenchmark',
-    'richards.RichardsBenchmark',
-    'queens.QueensBenchmark',
-    'permute.PermuteBenchmark',
-    'deltablue.DeltaBlueBenchmark',
-    'tracer.TracerBenchmark',
-    'brainfuck.BrainfuckBenchmark',
-    'json.JsonBenchmark',
-    'cd.CDBenchmark',
+    # 'bounce.BounceBenchmark',
+    # 'list.ListBenchmark',
+    # 'richards.RichardsBenchmark',
+    # 'queens.QueensBenchmark',
+    # 'permute.PermuteBenchmark',
+    # 'deltablue.DeltaBlueBenchmark',
+    # 'tracer.TracerBenchmark',
+    # 'brainfuck.BrainfuckBenchmark',
+    # 'json.JsonBenchmark',
+    # 'cd.CDBenchmark',
     'kmeans.KmeansBenchmark',
-    'gcbench.GCBenchBenchmark',
-    'mandelbrot.MandelbrotBenchmark',
-    'nbody.NbodyBenchmark',
-    'sudoku.SudokuBenchmark',
+    # 'gcbench.GCBenchBenchmark',
+    # 'mandelbrot.MandelbrotBenchmark',
+    # 'nbody.NbodyBenchmark',
+    # 'sudoku.SudokuBenchmark',
 ]
 
 stable = 'scala-native-0.3.8'
