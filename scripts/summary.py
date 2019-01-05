@@ -854,7 +854,7 @@ def write_md_file(rootdir, md_file, parent_configurations, configurations, bench
              "relative_total.png")
     write_md_table(md_file, configurations, benchmarks, data)
 
-    if gc_charts:
+    if False and gc_charts:
         md_file.write("## Total GC time on Application thread (ms) \n")
         mark, sweep, total = total_gc(configurations, benchmarks)
         chart_md(md_file, bar_chart_gc_relative(plt, configurations, benchmarks, mark, total), rootdir,
@@ -878,7 +878,7 @@ def write_md_file(rootdir, md_file, parent_configurations, configurations, bench
         md_file.write("\n")
 
         chart_md(md_file, percentiles_chart(plt, configurations, bench), rootdir, "percentile_" + bench + ".png")
-        if gc_charts:
+        if False and gc_charts:
             chart_md(md_file, gc_pause_time_chart(plt, configurations, bench), rootdir,
                      "gc_pause_times_" + bench + ".png")
             if size_charts:
