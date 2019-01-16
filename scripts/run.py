@@ -128,7 +128,7 @@ def compile_scala_native(ref, sha1):
         return False
 
 
-def compile(conf, bench, compilecmd, debug, trace):
+def compile(conf, bench, compilecmd, debug, trace, extra_args):
     cmd = [sbt, '-no-colors', '-J-Xmx2G', 'clean']
     cmd.append('set mainClass in Compile := Some("{}")'.format(bench))
     if conf.startswith("scala-native"):
@@ -136,13 +136,18 @@ def compile(conf, bench, compilecmd, debug, trace):
             cmd.append('set nativeCompileOptions ++= Seq("-g", "-DDEBUG_ASSERT")')
         if trace:
             cmd.append('set nativeCompileOptions +="-DDEBUG_PRINT"')
+        for k,v in extra_args.iteritems():
+            if k.endswith("?"):
+                cmd.append('set nativeCompileOptions +="-D{}"'.format(k[:-1]))
+            else:
+                cmd.append('set nativeCompileOptions +="-D{}={}"'.format(k,v))
     cmd.append(compilecmd)
     return try_run_silent(cmd)
 
 
 sbt = where('sbt')
 
-all_benchmarks = [
+default_benchmarks = [
     'bounce.BounceBenchmark',
     'list.ListBenchmark',
     'richards.RichardsBenchmark',
@@ -158,6 +163,10 @@ all_benchmarks = [
     'mandelbrot.MandelbrotBenchmark',
     'nbody.NbodyBenchmark',
     'sudoku.SudokuBenchmark',
+]
+
+all_benchmarks = default_benchmarks + [
+    'histogram.Histogram',
 ]
 
 stable = 'scala-native-0.3.8'
@@ -196,6 +205,14 @@ def expand_wild_cards(arg):
         return stable + arg[len("stable"):]
     else:
         return arg
+
+
+def benchmark_parse(arg):
+    parts = arg.split("@")
+    if len(parts) == 2:
+        return parts[0], parts[1]
+    else:
+        return arg, None
 
 
 def ref_parse(arg):
@@ -321,6 +338,8 @@ if __name__ == "__main__":
     parser.add_argument("--runs", help="number of runs", type=int, default=default_runs)
     parser.add_argument("--batches", help="number of batches per run", type=int, default=default_batches)
     parser.add_argument("--benchmark", help="benchmarks to run", action='append')
+    parser.add_argument("--argnames", help="compile arguments to set, mark flags with a '?' at the end, split with ','", type=str)
+    parser.add_argument("--argv", help="argument values, split with ',', booleans as true or false", action='append')
     parser.add_argument("--size", help="different size settings to use", action='append')
     parser.add_argument("--gcthreads", help="different number of garbage collection threads to use", action='append')
     parser.add_argument("--par", help="number of parallel processes", type=int, default=default_par)
@@ -342,9 +361,17 @@ if __name__ == "__main__":
     if args.benchmark != None:
         benchmarks = []
         for b in args.benchmark:
-            benchmarks += filter(lambda s: s.startswith(b), all_benchmarks)
+            if b == "default":
+                benchmarks += default_benchmarks
+            else:
+                bname, bargs = benchmark_parse(b)
+                matching = filter(lambda s: s.startswith(bname), all_benchmarks)
+                if bargs != None:
+                    benchmarks += map(lambda x: (x, bargs), matching)
+                else:
+                    benchmarks += matching
     else:
-        benchmarks = all_benchmarks
+        benchmarks = default_benchmarks
 
     if args.size != None:
         sizes = []
@@ -383,6 +410,23 @@ if __name__ == "__main__":
             should_fetch = True
             break
 
+    if args.argnames != None and args.argv != None:
+        derived_configs = []
+        argnames = args.argnames.split(",")
+        for valset in args.argv :
+            values = valset.split(",")
+            suffix = "-a" + ("-".join(values))
+            extra_args = dict()
+            for (name, value) in zip(argnames, values):
+                if name.endswith("?"):
+                    if value in ["1", "true", "TRUE", "True"]:
+                        extra_args[name[:-1]] = True
+                else:
+                    extra_args[name] = value
+            derived_configs.append((suffix, extra_args))
+    else:
+        derived_configs = [("", dict())]
+
     if should_fetch:
         git_fetch(scala_native_dir)
 
@@ -415,18 +459,13 @@ if __name__ == "__main__":
     for conf in configurations:
         conf_name, ref = ref_parse(conf)
 
-        generalized_dir = os.path.join('results', conf + suffix)
         if ref == None:
             sha1 = None
-            root_dir = generalized_dir
         else:
             sha1 = get_ref(ref)
             if sha1 == None:
                 compile_fail += [conf]
                 continue
-            root_dir = os.path.join('results', conf + "." + sha1 + "." + suffix)
-
-        mkdir(root_dir)
 
         if sha1 != None:
             success = compile_scala_native(ref, sha1)
@@ -434,90 +473,105 @@ if __name__ == "__main__":
                 compile_fail += [conf]
                 continue
 
-        symlink = None
-        if generalized_dir != root_dir:
-            create_symlink(generalized_dir, root_dir)
-            symlinks += [[generalized_dir, root_dir]]
-            symlink = generalized_dir
-            if args.upload or args.gitupload:
-                create_symlink(os.path.join(upload_dir, generalized_dir), root_dir)
-
-        # subconfigurations
-        for (size, gcThreads) in itertools.product(sizes, gcThreadCounts):
-
-            if size == ["default", "default"] and gcThreads == "default":
-                subconfig_dir = root_dir
+        # derived configurations
+        for (der_suffix, extra_args) in derived_configs:
+            generalized_dir = os.path.join('results', conf + suffix + der_suffix)
+            if sha1 == None:
+                root_dir = generalized_dir + der_suffix
             else:
-                size_str = []
-                if size != ["default", "default"] :
-                    size_str = ["size_" + size[0] + "-" + size[1]]
-                gcThreads_str = []
-                if gcThreads != "default":
-                    gcThreads_str = ["gcthreads_" + gcThreads]
-                subconf_str = "_".join(size_str + gcThreads_str)
-                subconfig_dir = os.path.join(root_dir, subconf_str)
+                root_dir = os.path.join('results', conf + "." + sha1 + "." + suffix + der_suffix)
 
-            if not args.overwrite and os.path.isfile(os.path.join(subconfig_dir, ".complete")):
-                print  subconfig_dir, "already complete, skipping"
-                skipped += [subconfig_dir]
-                continue
+            mkdir(root_dir)
+            symlink = None
+            if generalized_dir != root_dir:
+                create_symlink(generalized_dir, root_dir)
+                symlinks += [[generalized_dir, root_dir]]
+                symlink = generalized_dir
+                if args.upload or args.gitupload:
+                    create_symlink(os.path.join(upload_dir, generalized_dir), root_dir)
 
-            if not args.append:
-                sh.rmtree(subconfig_dir, ignore_errors=True)
+            # subconfigurations
+            for (size, gcThreads) in itertools.product(sizes, gcThreadCounts):
 
-            mkdir(subconfig_dir)
-
-            for bench in benchmarks:
-                print('--- heap size: {} GC threads: {} conf: {}, bench: {}'.format(size, gcThreads, conf, bench))
-
-                input = slurp(os.path.join('input', bench))
-                output = slurp(os.path.join('output', bench))
-                compilecmd = slurp(os.path.join('confs', conf_name, 'compile'))
-                runcmd = slurp(os.path.join('confs', conf_name, 'run')) \
-                    .replace('$BENCH', bench) \
-                    .replace('$HOME', os.environ['HOME']).split(' ')
-
-                if os.path.exists(os.path.join('confs', conf_name, 'build.sbt')):
-                    sh.copyfile(os.path.join('confs', conf_name, 'build.sbt'), 'build.sbt')
+                if size == ["default", "default"] and gcThreads == "default":
+                    subconfig_dir = root_dir
                 else:
-                    os.remove('build.sbt')
+                    size_str = []
+                    if size != ["default", "default"] :
+                        size_str = ["size_" + size[0] + "-" + size[1]]
+                    gcThreads_str = []
+                    if gcThreads != "default":
+                        gcThreads_str = ["gcthreads_" + gcThreads]
+                    subconf_str = "_".join(size_str + gcThreads_str)
+                    subconfig_dir = os.path.join(root_dir, subconf_str)
 
-                if os.path.exists(os.path.join('confs', conf_name, 'plugins.sbt')):
-                    sh.copyfile(os.path.join('confs', conf_name, 'plugins.sbt'), 'project/plugins.sbt')
-                else:
-                    os.remove('project/plugins.sbt')
+                if not args.overwrite and os.path.isfile(os.path.join(subconfig_dir, ".complete")):
+                    print  subconfig_dir, "already complete, skipping"
+                    skipped += [subconfig_dir]
+                    continue
 
-                compile_success = compile(conf, bench, compilecmd, args.gcdebug, args.gctrace)
-                if not compile_success:
-                    compile_fail += [conf]
-                    break
+                if not args.append:
+                    sh.rmtree(subconfig_dir, ignore_errors=True)
 
-                resultsdir = os.path.join(subconfig_dir, bench)
-                print "results in", resultsdir
-                mkdir(resultsdir)
+                mkdir(subconfig_dir)
 
-                cmd = []
-                cmd.extend(runcmd)
-                cmd.extend([str(batches), str(batch_size), input, output])
+                for bconf in benchmarks:
+                    if type(bconf) is tuple:
+                        bench, input = bconf
+                        bfullname = bench + "@" + input
+                    else:
+                        bench = bconf
+                        input = slurp(os.path.join('input', bench))
+                        bfullname = bench
+                    print('--- heap size: {} GC threads: {} conf: {}, bench: {}'.format(size, gcThreads, conf, bfullname))
 
-                to_run = []
-                for n in xrange(runs):
-                    to_run += [
-                        dict(runs=runs, cmd=cmd, resultsdir=resultsdir, conf=conf, bench=bench, n=n, gcstats=args.gc,
-                             size=size, gcThreads=gcThreads)]
+                    output = slurp(os.path.join('output', bench))
+                    compilecmd = slurp(os.path.join('confs', conf_name, 'compile'))
+                    runcmd = slurp(os.path.join('confs', conf_name, 'run')) \
+                        .replace('$BENCH', bench) \
+                        .replace('$HOME', os.environ['HOME']).split(' ')
 
-                if par == 1:
-                    for tr in to_run:
-                        failed += single_run(tr)
-                else:
-                    failed += sum(pool.map(single_run, to_run), [])
+                    if os.path.exists(os.path.join('confs', conf_name, 'build.sbt')):
+                        sh.copyfile(os.path.join('confs', conf_name, 'build.sbt'), 'build.sbt')
+                    else:
+                        os.remove('build.sbt')
 
-            # mark it as complete
-            open(os.path.join(subconfig_dir, ".complete"), 'w+').close()
-            result_dirs += [subconfig_dir]
+                    if os.path.exists(os.path.join('confs', conf_name, 'plugins.sbt')):
+                        sh.copyfile(os.path.join('confs', conf_name, 'plugins.sbt'), 'project/plugins.sbt')
+                    else:
+                        os.remove('project/plugins.sbt')
 
-            if args.upload or args.gitupload:
-                upload(subconfig_dir, symlink, args.gitupload, args.overwrite)
+                    compile_success = compile(conf, bench, compilecmd, args.gcdebug, args.gctrace, extra_args)
+                    if not compile_success:
+                        compile_fail += [conf]
+                        break
+
+                    resultsdir = os.path.join(subconfig_dir, bfullname)
+                    print "results in", resultsdir
+                    mkdir(resultsdir)
+
+                    cmd = []
+                    cmd.extend(runcmd)
+                    cmd.extend([str(batches), str(batch_size), input, output])
+
+                    to_run = []
+                    for n in xrange(runs):
+                        to_run += [
+                            dict(runs=runs, cmd=cmd, resultsdir=resultsdir, conf=conf, bench=bench, n=n, gcstats=args.gc,
+                                 size=size, gcThreads=gcThreads)]
+
+                    if par == 1:
+                        for tr in to_run:
+                            failed += single_run(tr)
+                    else:
+                        failed += sum(pool.map(single_run, to_run), [])
+
+                # mark it as complete
+                open(os.path.join(subconfig_dir, ".complete"), 'w+').close()
+                result_dirs += [subconfig_dir]
+
+                if args.upload or args.gitupload:
+                    upload(subconfig_dir, symlink, args.gitupload, args.overwrite)
 
     print "results:"
     for dir in result_dirs:
