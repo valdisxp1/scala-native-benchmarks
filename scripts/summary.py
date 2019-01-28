@@ -691,9 +691,42 @@ def sizes_per_conf(parent_configuration):
     return min_sizes, max_sizes, child_confs
 
 
-def size_compare_chart_generic(plt, parent_configurations, bench, get_percentile, p):
+def args_from_conf(conf):
+    parts = os.path.split(conf)
+    if len(parts) == 1:
+        # simple configuration
+        size = ["default", "default"]
+        parent_conf = conf
+        gcthreads = "default"
+    elif len(parts) == 2 and "_" in parts[1]:
+        parent_conf = parts[0]
+        # examples: /gcthreads_4  /size_1g-1g_gcthreads_1 /size_1g-1g
+        fine_parts = parts[1].split("_")
+        if fine_parts[0] == "size":
+            size_parts = fine_parts[1].split("-")
+            size = [to_gb(size_parts[0]), to_gb(size_parts[1])]
+            fine_parts = fine_parts[2:]
+        else:
+            size = ["default", "default"]
+        if len(fine_parts) > 0 and fine_parts[0] == "gcthreads":
+            gcthreads = int(fine_parts[1])
+        else:
+            gcthreads = "default"
+    else:
+        print "unknown configuration format", conf
+        # unknown configuration
+        size = ["default", "default"]
+        parent_conf = conf
+        gcthreads = "default"
+    return parent_conf, size, gcthreads
+
+
+def size_compare_chart_generic(plt, bench, configurations, get_percentile, p):
     plt.clf()
     plt.cla()
+
+    # configurations.map(args_from_conf).groupBy(a=>(a.conf,a.gcthreads,sz))
+
     for parent_conf in parent_configurations:
         min_sizes, max_sizes, child_confs = sizes_per_conf(parent_conf)
         equal_sizes = []
@@ -715,7 +748,7 @@ def size_compare_chart_generic(plt, parent_configurations, bench, get_percentile
     return plt
 
 
-def size_compare_chart_gc_combined(plt, parent_configurations, bench):
+def size_compare_chart_gc_combined(plt, configurations, bench):
     plt.clf()
     plt.cla()
     for parent_conf in parent_configurations:
@@ -743,29 +776,29 @@ def size_compare_chart_gc_combined(plt, parent_configurations, bench):
     return plt
 
 
-def size_compare_chart(plt, parent_configurations, bench, warmup, p):
-    plt = size_compare_chart_generic(plt, parent_configurations, bench, lambda configurations, benchmark, p: percentile_bench(configurations, benchmark, warmup, p), p)
+def size_compare_chart(plt, configurations, bench, warmup, p):
+    plt = size_compare_chart_generic(plt, bench, configurations, lambda configurations, benchmark, p: percentile_bench(configurations, benchmark, warmup, p), p)
     plt.title("{} at {} percentile".format(bench, p))
     plt.ylabel("Run time (ms)")
     return plt
 
 
-def size_compare_chart_gc(plt, parent_configurations, bench, p):
-    plt = size_compare_chart_generic(plt, parent_configurations, bench, percentile_gc_bench_total, p)
+def size_compare_chart_gc(plt, configurations, bench, p):
+    plt = size_compare_chart_generic(plt, bench, configurations, percentile_gc_bench_total, p)
     plt.title("{}: GC pause time at {} percentile".format(bench, p))
     plt.ylabel("GC pause time (ms)")
     return plt
 
 
-def size_compare_chart_gc_mark(plt, parent_configurations, bench, p):
-    plt = size_compare_chart_generic(plt, parent_configurations, bench, percentile_gc_bench_mark, p)
+def size_compare_chart_gc_mark(plt, bench, p):
+    plt = size_compare_chart_generic(plt, bench, configurations, percentile_gc_bench_mark, p)
     plt.title("{}: GC mark pause time at {} percentile".format(bench, p))
     plt.ylabel("GC mark time (ms)")
     return plt
 
 
-def size_compare_chart_gc_sweep(plt, parent_configurations, bench, p):
-    plt = size_compare_chart_generic(plt, parent_configurations, bench, percentile_gc_bench_sweep, p)
+def size_compare_chart_gc_sweep(plt, bench, p):
+    plt = size_compare_chart_generic(plt, bench, configurations, percentile_gc_bench_sweep, p)
     plt.title("{}: GC sweep pause time at {} percentile".format(bench, p))
     plt.ylabel("GC sweep time (ms)")
     return plt
@@ -1065,7 +1098,7 @@ def chart_md(md_file, plt, rootdir, name):
     md_file.write("![{}]({})\n\n".format(title, name))
 
 
-def write_md_file(rootdir, md_file, parent_configurations, configurations, benchmarks, warmup, gc_charts=False,
+def write_md_file(rootdir, md_file, configurations, benchmarks, warmup, gc_charts=False,
                   size_charts=False):
     interesting_percentiles = [50, 90, 99, 99.9]
     md_file.write("# Summary\n")
@@ -1122,20 +1155,20 @@ def write_md_file(rootdir, md_file, parent_configurations, configurations, bench
                      "gc_sweep_batches_95plus_" + bench + ".png")
             if size_charts:
                 for p in interesting_percentiles:
-                    chart_md(md_file, size_compare_chart_gc_mark(plt, parent_configurations, bench, p), rootdir,
+                    chart_md(md_file, size_compare_chart_gc_mark(plt, bench, p), rootdir,
                              "gc_size_chart" + bench + "percentile_" + str(p) + "_mark.png")
                 for p in interesting_percentiles:
-                    chart_md(md_file, size_compare_chart_gc_sweep(plt, parent_configurations, bench, p), rootdir,
+                    chart_md(md_file, size_compare_chart_gc_sweep(plt, bench, p), rootdir,
                              "gc_size_chart" + bench + "percentile_" + str(p) + "_sweep.png")
                 for p in interesting_percentiles:
-                    chart_md(md_file, size_compare_chart_gc_sweep(plt, parent_configurations, bench, p), rootdir,
+                    chart_md(md_file, size_compare_chart_gc_sweep(plt, bench, p), rootdir,
                              "gc_size_chart" + bench + "percentile_" + str(p) + "_total.png")
-                chart_md(md_file, size_compare_chart_gc_combined(plt, parent_configurations, bench), rootdir,
+                chart_md(md_file, size_compare_chart_gc_combined(plt, configurations, bench), rootdir,
                          "gc_size_chart_total" + bench + ".png")
 
         if size_charts:
             for p in interesting_percentiles:
-                chart_md(md_file, size_compare_chart(plt, parent_configurations, bench, warmup, p), rootdir,
+                chart_md(md_file, size_compare_chart(plt, configurations, bench , warmup, p), rootdir,
                          "size_chart_" + bench + "percentile_" + str(p) + ".png")
 
         run = 3
@@ -1271,6 +1304,6 @@ if __name__ == '__main__':
     plt.rcParams["legend.fontsize"] = 30.0
     mkdir(report_dir)
     with open(os.path.join(report_dir, "Readme.md"), 'w+') as md_file:
-        write_md_file(report_dir, md_file, parent_configurations, configurations, benchmarks, args.warmup, args.gc, args.vssize)
+        write_md_file(report_dir, md_file, configurations, benchmarks, args.warmup, args.gc, args.vssize)
 
     print report_dir
