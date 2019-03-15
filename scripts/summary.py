@@ -1053,10 +1053,13 @@ def benchmark_short_name(bench):
 
 
 def chart_md(md_file, plt, rootdir, name):
+    title = plt.axes().get_title()
+    plt.title(u'')
     plt.savefig(rootdir + name, pad_inches=0, bbox_inches='tight')
     plt.close("all")
     plt.figure(figsize=(32, 24))
-    md_file.write("![Chart]({})\n\n".format(name))
+    md_file.write("{}\n\n".format(title))
+    md_file.write("![{}]({})\n\n".format(title, name))
 
 
 def write_md_file(rootdir, md_file, parent_configurations, configurations, benchmarks, warmup, gc_charts=False,
