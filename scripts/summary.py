@@ -503,7 +503,7 @@ def bar_chart_relative(plt, configurations, benchmarks, data):
                 res.append(0)
         plt.bar(ind * conf_count + conf_idx, res, label=conf)
     plt.xticks((ind * conf_count + (conf_count - 1) / 2.0), map(benchmark_short_name, benchmarks))
-    plt.legend()
+    plt.legend(loc='lower right')
     return plt
 
 
@@ -1265,7 +1265,8 @@ if __name__ == '__main__':
 
     report_dir = "reports/summary_" + time.strftime('%Y%m%d_%H%M%S') + "_" + comment + "/"
     plt.figure(figsize=(32, 24))
-    plt.rcParams["font.size"] = 20.0
+    plt.rcParams["font.size"] = 28.0
+    plt.rcParams["legend.fontsize"] = 30.0
     mkdir(report_dir)
     with open(os.path.join(report_dir, "Readme.md"), 'w+') as md_file:
         write_md_file(report_dir, md_file, parent_configurations, configurations, benchmarks, args.warmup, args.gc, args.vssize)
