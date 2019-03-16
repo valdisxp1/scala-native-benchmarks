@@ -776,7 +776,6 @@ def percentiles_chart_generic_runs(plt, conf, bench, get_data, first, last, step
             percentiles = filter(lambda x: 0 <= x <= 100, np.arange(first, last + step, step))
             percvalue = np.array([np.percentile(data, perc) for perc in percentiles])
             plt.plot(percentiles, percvalue, label=run)
-    plt.legend()
     plt.ylim(ymin=0)
     plt.xlabel("Percentile")
     return plt
@@ -852,11 +851,10 @@ def thread_id_tostring(n):
 def gc_gantt_chart(plt, conf, bench, data, only_batches = False):
     plt.clf()
     plt.cla()
-    plt.figure(figsize=(100, 24))
+    # plt.figure(figsize=(100, 24))
     labels = []
     collection_events, phase_events_by_thread, batch_events_by_thread, internal_events_by_thread = data
 
-    values = []
     event_type_to_color = {
         "mark": ("red", "darkred"), "sweep": ("blue", "darkblue"), "concmark": ("red", "darkred"),
         "concsweep": ("blue", "darkblue"),
@@ -897,31 +895,30 @@ def gc_gantt_chart(plt, conf, bench, data, only_batches = False):
                 if event == et:
                     values.append((start, time))
             if only_batches:
-                plt.broken_barh(values, (end, 0.5), facecolors=event_type_to_color[et], label=et)
+                plt.broken_barh(values, (end, 1), facecolors=event_type_to_color[et], label=et)
             else:
                 plt.broken_barh(values, (end + 0.50, 0.25), facecolors=event_type_to_color[et], label=et)
-        for et in internal_events_types:
-            values = []
-            for e in internal_values:
-                event = e[0]
-                start = e[1]
-                time = e[2]
-                if event == et:
-                    values.append((start, time))
-            if only_batches:
-                plt.broken_barh(values, (end + 0.5, 0.5), facecolors=event_type_to_color[et], label=et)
-            else:
-                plt.broken_barh(values, (end + 0.75, 0.25), facecolors=event_type_to_color[et], label=et)
+        if not only_batches:
+            for et in internal_events_types:
+                values = []
+                for e in internal_values:
+                    event = e[0]
+                    start = e[1]
+                    time = e[2]
+                    if event == et:
+                        values.append((start, time))
+                    plt.broken_barh(values, (end + 0.75, 0.25), facecolors=event_type_to_color[et], label=et)
 
     plt.yticks(np.arange(len(labels)), labels)
     plt.xlabel("Time since start (ms)")
     plt.title(conf + " " + bench + " last garbage collection")
-    plt.legend(handles=[(mpatches.Patch(color='black', label='collection')),
+    plt.legend(handles=[
+                        # (mpatches.Patch(color='black', label='collection')),
                         (mpatches.Patch(color='red', label='mark')),
                         (mpatches.Patch(color='blue', label='sweep')),
                         (mpatches.Patch(color='green', label='coalesce')),
-                        (mpatches.Patch(color='grey', label='mark waiting')),
-                        (mpatches.Patch(color='yellow', label='sync')),
+                        # (mpatches.Patch(color='grey', label='mark waiting')),
+                        # (mpatches.Patch(color='yellow', label='sync')),
                         ])
 
     return plt
@@ -1153,11 +1150,11 @@ def write_md_file(rootdir, md_file, parent_configurations, configurations, bench
                 #          "example_allruns_full_conf" + str(configurations.index(conf)) + "_" + bench + ".png")
                 if gc_charts:
                     gc_data = gc_events_for_last_n_collections(bench, conf, run)
-                    chart_md(md_file,
-                             gc_gantt_chart(plt, conf, bench, gc_data),
-                             rootdir,
-                             "example_gc_last_" + "_conf" + str(configurations.index(conf)) + "_" + str(
-                                 run) + "_" + bench + ".png")
+                    # chart_md(md_file,
+                    #          gc_gantt_chart(plt, conf, bench, gc_data),
+                    #          rootdir,
+                    #          "example_gc_last_" + "_conf" + str(configurations.index(conf)) + "_" + str(
+                    #              run) + "_" + bench + ".png")
                     chart_md(md_file,
                              gc_gantt_chart(plt, conf, bench, gc_data, only_batches=True),
                              rootdir,
@@ -1185,7 +1182,6 @@ def find_last_run(conf, bench):
     max_run -= 1
 
     return max_run
-
 
 
 def discover_benchmarks(configurations):
