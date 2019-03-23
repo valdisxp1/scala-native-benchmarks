@@ -1067,7 +1067,7 @@ def chart_md(md_file, plt, rootdir, name):
 
 def write_md_file(rootdir, md_file, parent_configurations, configurations, benchmarks, warmup, gc_charts=False,
                   size_charts=False):
-    interesting_percentiles = [50, 90, 99, 99.9]
+    interesting_percentiles = [] # [50, 90, 99, 99.9]
     md_file.write("# Summary\n")
     for p in interesting_percentiles:
         md_file.write("## Benchmark run time (ms) at {} percentile \n".format(p))
@@ -1105,8 +1105,8 @@ def write_md_file(rootdir, md_file, parent_configurations, configurations, bench
         md_file.write(bench)
         md_file.write("\n")
 
-        chart_md(md_file, percentiles_chart(plt, configurations, bench, warmup), rootdir, "percentile_" + bench + ".png")
-        chart_md(md_file, percentiles_chart(plt, configurations, bench, warmup, first=95, step=0.01), rootdir, "percentile_95plus_" + bench + ".png")
+        # chart_md(md_file, percentiles_chart(plt, configurations, bench, warmup), rootdir, "percentile_" + bench + ".png")
+        # chart_md(md_file, percentiles_chart(plt, configurations, bench, warmup, first=95, step=0.01), rootdir, "percentile_95plus_" + bench + ".png")
         if gc_charts:
             chart_md(md_file, gc_pause_time_chart(plt, configurations, bench), rootdir,
                      "gc_pause_times_" + bench + ".png")
@@ -1143,10 +1143,10 @@ def write_md_file(rootdir, md_file, parent_configurations, configurations, bench
             run -= 1
 
         if run >= 0:
-            # chart_md(md_file, example_run_plot(plt, configurations, bench, run, 1000), rootdir,
-            #          "example_run_last1000_" + str(run) + "_" + bench + ".png")
-            chart_md(md_file, example_run_plot(plt, configurations, bench, run), rootdir,
-                     "example_run_full_" + str(run) + "_" + bench + ".png")
+            chart_md(md_file, example_run_plot(plt, configurations, bench, run, 400), rootdir,
+                     "example_run_last400_" + str(run) + "_" + bench + ".png")
+            # chart_md(md_file, example_run_plot(plt, configurations, bench, run), rootdir,
+            #          "example_run_full_" + str(run) + "_" + bench + ".png")
             for conf in configurations:
                 chart_md(md_file, percentiles_chart_runs(plt, conf, bench, warmup), rootdir, "percentile_" + bench + "_conf" + str(configurations.index(conf))+ ".png")
                 chart_md(md_file, percentiles_chart_runs(plt, conf, bench, warmup, first=95, step=0.01), rootdir, "percentile_95plus_" + bench + "_conf" + str(configurations.index(conf))+ ".png")
