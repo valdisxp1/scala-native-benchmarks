@@ -469,6 +469,10 @@ def totals_bench(configurations, bench, warmup):
     return res
 
 
+def short_name(conf):
+    return os.path.split(conf)[0]
+
+
 def bar_chart_relative(plt, configurations, benchmarks, data):
     plt.clf()
     plt.cla()
@@ -488,7 +492,7 @@ def bar_chart_relative(plt, configurations, benchmarks, data):
         except IndexError:
             base.append(0.0)
             ref.append(0.0)
-    plt.bar(ind * conf_count, ref, label=configurations[0])
+    plt.bar(ind * conf_count, ref, label=short_name(configurations[0]))
 
     for i, conf in enumerate(configurations[1:]):
         conf_idx = i + 1
@@ -501,7 +505,7 @@ def bar_chart_relative(plt, configurations, benchmarks, data):
                     res.append(0.0)
             except IndexError:
                 res.append(0)
-        plt.bar(ind * conf_count + conf_idx, res, label=conf)
+        plt.bar(ind * conf_count + conf_idx, res, label=short_name(conf))
     plt.xticks((ind * conf_count + (conf_count - 1) / 2.0), map(benchmark_short_name, benchmarks))
     plt.legend(loc='lower right')
     return plt
@@ -544,8 +548,8 @@ def bar_chart_gc_relative(plt, configurations, benchmarks, mark_data, total_data
             base.append(0)
             ref.append(0.0)
             mark_ref.append(0.0)
-    plt.bar(ind * conf_count, ref, label=configurations[0] + "-sweep")  # total (look like sweep)
-    plt.bar(ind * conf_count, mark_ref, label=configurations[0] + "-mark")  # mark time
+    plt.bar(ind * conf_count, ref, label=short_name(configurations[0]) + "-sweep")  # total (look like sweep)
+    plt.bar(ind * conf_count, mark_ref, label=short_name(configurations[0]) + "-mark")  # mark time
 
     for i, conf in enumerate(configurations[1:]):
         conf_idx = i + 1
@@ -561,8 +565,8 @@ def bar_chart_gc_relative(plt, configurations, benchmarks, mark_data, total_data
             else:
                 res.append(0)
                 mark_res.append(0)
-        plt.bar(ind * conf_count + i + 1, res, label=conf + "-sweep")  # total (look like sweep)
-        plt.bar(ind * conf_count + i + 1, mark_res, label=conf + "-mark")  # mark time
+        plt.bar(ind * conf_count + i + 1, res, label=short_name(conf) + "-sweep")  # total (look like sweep)
+        plt.bar(ind * conf_count + i + 1, mark_res, label=short_name(conf) + "-mark")  # mark time
     plt.xticks((ind * conf_count + (conf_count - 1) / 2.0), map(benchmark_short_name, benchmarks))
     plt.title("Relative gc times against " + configurations[0])
     plt.legend()
@@ -585,8 +589,8 @@ def bar_chart_gc_absolute(plt, configurations, benchmarks, percentile):
                 mark_res.append(np.percentile(mark, percentile))
             except IndexError:
                 res.append(0)
-        plt.bar(ind * conf_count + i + 1, res, label=conf + "-sweep")  # total (look like sweep)
-        plt.bar(ind * conf_count + i + 1, mark_res, label=conf + "-mark")  # mark time
+        plt.bar(ind * conf_count + i + 1, res, label=short_name(conf) + "-sweep")  # total (look like sweep)
+        plt.bar(ind * conf_count + i + 1, mark_res, label=short_name(conf) + "-mark")  # mark time
     plt.xticks((ind * conf_count + (conf_count - 1) / 2.0), map(benchmark_short_name, benchmarks))
     plt.title("Garbage collector pause times at " + str(percentile) + " percentile")
     plt.legend()
@@ -616,7 +620,7 @@ def example_run_plot(plt, configurations, bench, run=3, lastn=-1):
             first = 0
         ind = np.arange(first, total_len)
         points = rawpoints[first:]
-        plt.plot(ind, points, label=conf)
+        plt.plot(ind, points, label=short_name(conf))
     plt.title("{} run #{}".format(bench, str(run)))
     plt.xlabel("Iteration")
     plt.ylabel("Run time (ms)")
@@ -654,7 +658,6 @@ def example_all_runs_plot(plt, conf, bench, lastn=-1):
     plt.title("{} all runs for {}".format(bench, conf))
     plt.xlabel("Iteration")
     plt.ylabel("Run time (ms)")
-    plt.legend()
     return plt
 
 
@@ -789,7 +792,7 @@ def percentiles_chart_generic(plt, configurations, bench, get_data, first, last,
         if data.size > 0:
             percentiles = filter(lambda x: 0 <= x <= 100, np.arange(first, last + step, step))
             percvalue = np.array([np.percentile(data, perc) for perc in percentiles])
-            plt.plot(percentiles, percvalue, label=conf)
+            plt.plot(percentiles, percvalue, label=short_name(conf))
     plt.legend()
     plt.ylim(ymin=0)
     plt.xlabel("Percentile")
