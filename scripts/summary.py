@@ -470,7 +470,10 @@ def totals_bench(configurations, bench, warmup):
 
 
 def short_name(conf):
-    return os.path.split(conf)[0]
+    if os.path.sep in conf:
+        return os.path.split(conf)[0]
+    else:
+        return conf
 
 
 def bar_chart_relative(plt, configurations, benchmarks, data):
