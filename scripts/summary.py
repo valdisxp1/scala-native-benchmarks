@@ -857,7 +857,7 @@ def thread_id_tostring(n):
 def gc_gantt_chart(plt, conf, bench, data, only_batches = False):
     plt.clf()
     plt.cla()
-    # plt.figure(figsize=(100, 24))
+    plt.figure(figsize=(50, 6))
     labels = []
     collection_events, phase_events_by_thread, batch_events_by_thread, internal_events_by_thread = data
 
@@ -901,7 +901,7 @@ def gc_gantt_chart(plt, conf, bench, data, only_batches = False):
                 if event == et:
                     values.append((start, time))
             if only_batches:
-                plt.broken_barh(values, (end, 1), facecolors=event_type_to_color[et], label=et)
+                plt.broken_barh(values, (end + 0.1, 0.9), facecolors=event_type_to_color[et], label=et)
             else:
                 plt.broken_barh(values, (end + 0.50, 0.25), facecolors=event_type_to_color[et], label=et)
         if not only_batches:
