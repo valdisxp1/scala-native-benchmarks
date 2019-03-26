@@ -759,6 +759,43 @@ def size_compare_chart_generic(plt, bench, configurations, get_percentile, p):
     return plt
 
 
+def gcthread_compare_chart_generic(plt, bench, configurations, get_percentile, p, scale=False):
+    plt.clf()
+    plt.cla()
+
+    gcthread_specified = dict()
+
+    for conf in configurations:
+        parent_conf, size, gcthreads = args_from_conf(conf)
+        if gcthreads != "default":
+            # taking str(size), because list is unhashable
+            append_or_create(gcthread_specified, (parent_conf, str(size)), (gcthreads, conf))
+
+    for (parent_conf, size), gcthreads_with_confs in gcthread_specified.iteritems():
+        sorted_vals = sorted(gcthreads_with_confs)
+        # unzip
+        gcthread_counts, confs = list(zip(*sorted_vals))
+        #TODO add size to labels for non-thesis
+        label = parent_conf
+        percentiles = get_percentile(confs, bench, p)
+        if scale:
+            # show improvement over 1 thread (scaling)
+            if len(gcthread_counts) > 0:
+                versus = percentiles[0]
+                values = np.array(percentiles) / versus
+                plt.plot(np.array(gcthread_counts), values, label=label)
+            else:
+                print "not enough data to compare", gcthread_counts
+        else:
+            plt.plot(np.array(gcthread_counts), percentiles, label=label)
+    plt.legend()
+    plt.xlim(xmin=0)
+    plt.ylim(ymin=0)
+    plt.xlabel("Garbage collector threads")
+
+    return plt
+
+
 def size_compare_chart_gc_combined(plt, configurations, bench):
     plt.clf()
     plt.cla()
@@ -798,21 +835,41 @@ def size_compare_chart(plt, configurations, bench, warmup, p):
     return plt
 
 
-def size_compare_chart_gc(plt, configurations, bench, p):
+def gcthreads_compare_chart(plt, configurations, bench, warmup, p, scale=False):
+    plt = gcthread_compare_chart_generic(plt, bench, configurations, lambda configurations, benchmark, p: percentile_bench(configurations, benchmark, warmup, p), p, scale)
+    plt.title("{}: GC pause time at {} percentile".format(bench, p))
+    if scale :
+        plt.ylabel("Run time reduction (times)")
+    else:
+        plt.ylabel("Run time (ms)")
+    return plt
+
+
+def size_compare_chart_gc_total(plt, configurations, bench, p):
     plt = size_compare_chart_generic(plt, bench, configurations, percentile_gc_bench_total, p)
     plt.title("{}: GC pause time at {} percentile".format(bench, p))
     plt.ylabel("GC pause time (ms)")
     return plt
 
 
-def size_compare_chart_gc_mark(plt, bench, p):
+def gcthreads_compare_chart_gc_total(plt, configurations, bench, p, scale=False):
+    plt = gcthread_compare_chart_generic(plt, bench, configurations, percentile_gc_bench_total, p, scale)
+    plt.title("{}: GC pause time at {} percentile".format(bench, p))
+    if scale :
+        plt.ylabel("GC pause time reduction (times)")
+    else:
+        plt.ylabel("GC pause time (ms)")
+    return plt
+
+
+def size_compare_chart_gc_mark(plt, configurations, bench, p):
     plt = size_compare_chart_generic(plt, bench, configurations, percentile_gc_bench_mark, p)
     plt.title("{}: GC mark pause time at {} percentile".format(bench, p))
     plt.ylabel("GC mark time (ms)")
     return plt
 
 
-def size_compare_chart_gc_sweep(plt, bench, p):
+def size_compare_chart_gc_sweep(plt, configurations, bench, p):
     plt = size_compare_chart_generic(plt, bench, configurations, percentile_gc_bench_sweep, p)
     plt.title("{}: GC sweep pause time at {} percentile".format(bench, p))
     plt.ylabel("GC sweep time (ms)")
@@ -1114,7 +1171,7 @@ def chart_md(md_file, plt, rootdir, name):
 
 
 def write_md_file(rootdir, md_file, configurations, benchmarks, warmup, gc_charts=False,
-                  size_charts=False):
+                  size_charts=False, gcthread_charts=False):
     interesting_percentiles = [50, 90, 99, 99.9]
     md_file.write("# Summary\n")
     for p in interesting_percentiles:
@@ -1170,22 +1227,33 @@ def write_md_file(rootdir, md_file, configurations, benchmarks, warmup, gc_chart
                      "gc_sweep_batches_95plus_" + bench + ".png")
             if size_charts:
                 for p in interesting_percentiles:
-                    chart_md(md_file, size_compare_chart_gc_mark(plt, bench, p), rootdir,
+                    chart_md(md_file, size_compare_chart_gc_mark(plt, configurations, bench, p), rootdir,
                              "gc_size_chart" + bench + "percentile_" + str(p) + "_mark.png")
                 for p in interesting_percentiles:
-                    chart_md(md_file, size_compare_chart_gc_sweep(plt, bench, p), rootdir,
+                    chart_md(md_file, size_compare_chart_gc_sweep(plt, configurations, bench, p), rootdir,
                              "gc_size_chart" + bench + "percentile_" + str(p) + "_sweep.png")
                 for p in interesting_percentiles:
-                    chart_md(md_file, size_compare_chart_gc_sweep(plt, bench, p), rootdir,
+                    chart_md(md_file, size_compare_chart_gc_total(plt, configurations, bench, p), rootdir,
                              "gc_size_chart" + bench + "percentile_" + str(p) + "_total.png")
                 chart_md(md_file, size_compare_chart_gc_combined(plt, configurations, bench), rootdir,
                          "gc_size_chart_total" + bench + ".png")
+            if gcthread_charts:
+                for p in interesting_percentiles:
+                    chart_md(md_file, gcthreads_compare_chart_gc_total(plt, configurations, bench, p), rootdir,
+                             "gcthread_gc_chart_" + bench + "percentile_" + str(p) + "_total.png")
+                    chart_md(md_file, gcthreads_compare_chart_gc_total(plt, configurations, bench, p, scale=True), rootdir,
+                             "gcthread_gc_chart_scale_" + bench + "percentile_" + str(p) + "_total.png")
 
         if size_charts:
             for p in interesting_percentiles:
                 chart_md(md_file, size_compare_chart(plt, configurations, bench , warmup, p), rootdir,
                          "size_chart_" + bench + "percentile_" + str(p) + ".png")
-
+        if gcthread_charts:
+            for p in interesting_percentiles:
+                chart_md(md_file, gcthreads_compare_chart(plt, configurations, bench , warmup, p), rootdir,
+                         "gchthread_chart_" + bench + "percentile_" + str(p) + ".png")
+                chart_md(md_file, gcthreads_compare_chart(plt, configurations, bench , warmup, p, scale=True), rootdir,
+                         "gchthread_chart_scale_" + bench + "percentile_" + str(p) + ".png")
         run = 3
         while run >= 0 and not any_run_exists(bench, configurations, run):
             run -= 1
@@ -1277,6 +1345,7 @@ if __name__ == '__main__':
     parser.add_argument("--comment", help="comment at the suffix of the report name")
     parser.add_argument("--gc", help="enable charts about garbage collector", action="store_true")
     parser.add_argument("--vssize", help="enable charts against heap size", action="store_true")
+    parser.add_argument("--vsgcthreads", help="enable charts against garbage collector threads", action="store_true")
     parser.add_argument("--warmup", help="number of iterations to skip before calculating percentiles", type=int, default=default_warmup)
     parser.add_argument("--benchmark", help="benchmarks to use in comparision", action='append')
     parser.add_argument("comparisons", nargs='*', choices=results + ["all"],
@@ -1319,6 +1388,6 @@ if __name__ == '__main__':
     plt.rcParams["legend.fontsize"] = 30.0
     mkdir(report_dir)
     with open(os.path.join(report_dir, "Readme.md"), 'w+') as md_file:
-        write_md_file(report_dir, md_file, configurations, benchmarks, args.warmup, args.gc, args.vssize)
+        write_md_file(report_dir, md_file, configurations, benchmarks, args.warmup, args.gc, args.vssize, args.vsgcthreads)
 
     print report_dir
