@@ -762,21 +762,25 @@ def size_compare_chart_generic(plt, bench, configurations, get_percentile, p):
 def size_compare_chart_gc_combined(plt, configurations, bench):
     plt.clf()
     plt.cla()
-    for parent_conf in parent_configurations:
-        min_sizes, max_sizes, child_confs = sizes_per_conf(parent_conf)
-        equal_sizes = []
-        equal_confs = []
-        for min_size, max_size, child_conf in zip(min_sizes, max_sizes, child_confs):
-            if min_size == max_size:
-                equal_sizes.append(min_size)
-                equal_confs.append(child_conf)
+    # configurations.map(args_from_conf).groupBy(a=>(a.conf,a.gcthreads))
+    equal_sizes = dict()
 
-        # sorts all by size in GB
-        equal_sizes, equal_confs = zip(*[(x, y) for x, y in sorted(zip(equal_sizes, equal_confs))])
+    for conf in configurations:
+        parent_conf, size, gcthreads = args_from_conf(conf)
+        if size[0] != "default" and size[0] == size[1]:
+            min_size = size[0]
+            append_or_create(equal_sizes, (parent_conf, gcthreads), (min_size, conf))
 
-        mark, _, total = total_gc_bench(equal_confs, bench)
-        plt.plot(np.array(equal_sizes), total, label=parent_conf + "-sweep")  # total (look like sweep)
-        plt.plot(np.array(equal_sizes), mark, label=parent_conf + "-mark")  # mark time
+    for (parent_conf, gcthreads), size_with_confs in equal_sizes.iteritems():
+        sorted_vals = sorted(size_with_confs)
+        # unzip
+        sizes, confs = list(zip(*sorted_vals))
+        #TODO add gcthreads to labels for non-thesis
+        label = parent_conf
+
+        mark, _, total = total_gc_bench(confs, bench)
+        plt.plot(np.array(sizes), total, label=label + "-sweep")  # total (look like sweep)
+        plt.plot(np.array(sizes), mark, label=label + "-mark")  # mark time
     plt.legend()
     plt.xlim(xmin=0)
     plt.ylim(ymin=0)
