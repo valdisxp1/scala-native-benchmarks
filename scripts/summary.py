@@ -391,15 +391,24 @@ def percentile_gc_bench(configurations, bench, p):
     res_sweep = []
     res_total = []
     for conf in configurations:
+        mark, sweep, total = gc_pauses_main_thread(bench, conf)
         try:
-            mark, sweep, total = gc_pauses_main_thread(bench, conf)
             res_mark.append(np.percentile(mark, p))
-            res_sweep.append(np.percentile(sweep, p))
-            res_total.append(np.percentile(total, p))
         except IndexError:
             res_mark.append(0)
+        try:
+            res_sweep.append(np.percentile(sweep, p))
+        except IndexError:
             res_sweep.append(0)
+        try:
+            res_total.append(np.percentile(total, p))
+        except IndexError:
             res_total.append(0)
+    if len(res_mark) != len(configurations):
+        print configurations
+        print res_mark
+        print res_sweep
+        print res_total
     return res_mark, res_sweep, res_total
 
 
