@@ -1162,11 +1162,11 @@ def benchmark_short_name(bench):
 
 def chart_md(md_file, plt, rootdir, name):
     title = plt.axes().get_title()
-    plt.title(u'')
+    # plt.title(u'')
     plt.savefig(rootdir + name, pad_inches=0, bbox_inches='tight')
     plt.close("all")
-    plt.figure(figsize=(32, 24))
-    md_file.write("{}\n\n".format(title))
+    plt.figure(figsize=(20, 8))
+    # md_file.write("{}\n\n".format(title))
     md_file.write("![{}]({})\n\n".format(title, name))
 
 
@@ -1383,9 +1383,9 @@ if __name__ == '__main__':
         benchmarks = [x for x in all_benchmarks if x not in excluded_benchmarks]
 
     report_dir = "reports/summary_" + time.strftime('%Y%m%d_%H%M%S') + "_" + comment + "/"
-    plt.figure(figsize=(32, 24))
-    plt.rcParams["font.size"] = 28.0
-    plt.rcParams["legend.fontsize"] = 30.0
+    plt.figure(figsize=(20, 8))
+    plt.rcParams["font.size"] = 18.0
+    plt.rcParams["legend.fontsize"] = 18.0
     mkdir(report_dir)
     with open(os.path.join(report_dir, "Readme.md"), 'w+') as md_file:
         write_md_file(report_dir, md_file, configurations, benchmarks, args.warmup, args.gc, args.vssize, args.vsgcthreads)
