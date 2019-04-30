@@ -887,7 +887,7 @@ def percentiles_chart_generic_runs(plt, conf, bench, get_data, first, last, step
             percentiles = filter(lambda x: 0 <= x <= 100, np.arange(first, last + step, step))
             percvalue = np.array([np.percentile(data, perc) for perc in percentiles])
             plt.plot(percentiles, percvalue, label=run)
-    plt.ylim(ymin=0)
+    # plt.ylim(ymin=0)
     plt.xlabel("Percentile")
     return plt
 
@@ -914,7 +914,7 @@ def percentiles_chart(plt, configurations, bench, warmup, first=0, last=100, ste
     return plt
 
 
-def percentiles_chart_runs(plt, conf, bench, warmup, first=0, last=100, step=0.1):
+def percentiles_chart_runs(plt, conf, bench, warmup, first=0, last=99, step=0.1):
     plt = percentiles_chart_generic_runs(plt, conf, bench,
                                          lambda bench, conf, run: config_data_run(bench, conf, run, warmup), first,
                                          last, step)
