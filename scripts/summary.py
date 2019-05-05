@@ -1021,7 +1021,8 @@ def gc_gantt_chart(plt, conf, bench, data, only_batches = False):
                     plt.broken_barh(values, (end + 0.75, 0.25), facecolors=event_type_to_color[et], label=et)
 
     plt.yticks(np.arange(len(labels)), labels)
-    plt.xlabel("Time since start (ms)")
+    plt.xlabel("Time since start")
+    plt.xticks([])
     plt.title(conf + " " + bench + " last garbage collection")
     plt.legend(handles=[
                         # (mpatches.Patch(color='black', label='collection')),
