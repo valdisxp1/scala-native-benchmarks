@@ -962,7 +962,7 @@ def thread_id_tostring(n):
 def gc_gantt_chart(plt, conf, bench, data, only_batches = False):
     plt.clf()
     plt.cla()
-    plt.figure(figsize=(50, 6))
+    plt.figure(figsize=(18, 6))
     labels = []
     collection_events, phase_events_by_thread, batch_events_by_thread, internal_events_by_thread = data
 
@@ -1173,33 +1173,33 @@ def chart_md(md_file, plt, rootdir, name):
 def write_md_file(rootdir, md_file, configurations, benchmarks, warmup, gc_charts=False,
                   size_charts=False, gcthread_charts=False):
     interesting_percentiles = [50, 90, 99, 99.9]
-    md_file.write("# Summary\n")
-    for p in interesting_percentiles:
-        md_file.write("## Benchmark run time (ms) at {} percentile \n".format(p))
-        data = percentile(configurations, benchmarks, warmup, p)
-        chart_md(md_file, relative_execution_times(plt, configurations, benchmarks, data, p), rootdir,
-                 "relative_percentile_" + str(p) + ".png")
-        write_md_table(md_file, configurations, benchmarks, data)
+    # md_file.write("# Summary\n")
+    # for p in interesting_percentiles:
+    #     md_file.write("## Benchmark run time (ms) at {} percentile \n".format(p))
+    #     data = percentile(configurations, benchmarks, warmup, p)
+    #     chart_md(md_file, relative_execution_times(plt, configurations, benchmarks, data, p), rootdir,
+    #              "relative_percentile_" + str(p) + ".png")
+    #     write_md_table(md_file, configurations, benchmarks, data)
+    #
+    # md_file.write("## Benchmark total run time (ms) \n")
+    # data = totals(configurations, benchmarks, warmup)
+    # chart_md(md_file, total_execution_times(plt, configurations, benchmarks, data), rootdir,
+    #          "relative_total.png")
+    # write_md_table(md_file, configurations, benchmarks, data)
 
-    md_file.write("## Benchmark total run time (ms) \n")
-    data = totals(configurations, benchmarks, warmup)
-    chart_md(md_file, total_execution_times(plt, configurations, benchmarks, data), rootdir,
-             "relative_total.png")
-    write_md_table(md_file, configurations, benchmarks, data)
-
-    if gc_charts:
-        md_file.write("## Total GC time on Application thread (ms) \n")
-        mark, sweep, total = total_gc(configurations, benchmarks)
-        chart_md(md_file, bar_chart_gc_relative(plt, configurations, benchmarks, mark, total), rootdir,
-                 "relative_gc_total.png")
-        write_md_table_gc(md_file, configurations, benchmarks, mark, sweep, total)
-
-        for p in interesting_percentiles:
-            md_file.write("## GC pause time (ms) at {} percentile \n".format(p))
-            _, _, total = percentile_gc(configurations, benchmarks, p)
-            chart_md(md_file, relative_gc_pauses(plt, configurations, benchmarks, total, p), rootdir,
-                     "relative_gc_percentile_" + str(p) + ".png")
-            write_md_table(md_file, configurations, benchmarks, total)
+    # if gc_charts:
+    #     md_file.write("## Total GC time on Application thread (ms) \n")
+    #     mark, sweep, total = total_gc(configurations, benchmarks)
+    #     chart_md(md_file, bar_chart_gc_relative(plt, configurations, benchmarks, mark, total), rootdir,
+    #              "relative_gc_total.png")
+    #     write_md_table_gc(md_file, configurations, benchmarks, mark, sweep, total)
+    #
+    #     for p in interesting_percentiles:
+    #         md_file.write("## GC pause time (ms) at {} percentile \n".format(p))
+    #         _, _, total = percentile_gc(configurations, benchmarks, p)
+    #         chart_md(md_file, relative_gc_pauses(plt, configurations, benchmarks, total, p), rootdir,
+    #                  "relative_gc_percentile_" + str(p) + ".png")
+    #         write_md_table(md_file, configurations, benchmarks, total)
 
     md_file.write("# Individual benchmarks\n")
     for bench in benchmarks:
@@ -1210,21 +1210,21 @@ def write_md_file(rootdir, md_file, configurations, benchmarks, warmup, gc_chart
         md_file.write(bench)
         md_file.write("\n")
 
-        chart_md(md_file, percentiles_chart(plt, configurations, bench, warmup), rootdir, "percentile_" + bench + ".png")
-        chart_md(md_file, percentiles_chart(plt, configurations, bench, warmup, first=95, step=0.01), rootdir, "percentile_95plus_" + bench + ".png")
+        # chart_md(md_file, percentiles_chart(plt, configurations, bench, warmup), rootdir, "percentile_" + bench + ".png")
+        # chart_md(md_file, percentiles_chart(plt, configurations, bench, warmup, first=95, step=0.01), rootdir, "percentile_95plus_" + bench + ".png")
         if gc_charts:
-            chart_md(md_file, gc_pause_time_chart(plt, configurations, bench), rootdir,
-                     "gc_pause_times_" + bench + ".png")
-            chart_md(md_file, gc_pause_time_chart(plt, configurations, bench, first=95, step=0.01), rootdir,
-                     "gc_pause_times_95plus_" + bench + ".png")
-            chart_md(md_file, gc_mark_batch_time_chart(plt, configurations, bench), rootdir,
-                     "gc_mark_batches_" + bench + ".png")
-            chart_md(md_file, gc_mark_batch_time_chart(plt, configurations, bench, first=95, step=0.01), rootdir,
-                     "gc_mark_batches_95plus_" + bench + ".png")
-            chart_md(md_file, gc_sweep_batch_time_chart(plt, configurations, bench), rootdir,
-                     "gc_sweep_batches_" + bench + ".png")
-            chart_md(md_file, gc_sweep_batch_time_chart(plt, configurations, bench, first=95, step=0.01), rootdir,
-                     "gc_sweep_batches_95plus_" + bench + ".png")
+            # chart_md(md_file, gc_pause_time_chart(plt, configurations, bench), rootdir,
+            #          "gc_pause_times_" + bench + ".png")
+            # chart_md(md_file, gc_pause_time_chart(plt, configurations, bench, first=95, step=0.01), rootdir,
+            #          "gc_pause_times_95plus_" + bench + ".png")
+            # chart_md(md_file, gc_mark_batch_time_chart(plt, configurations, bench), rootdir,
+            #          "gc_mark_batches_" + bench + ".png")
+            # chart_md(md_file, gc_mark_batch_time_chart(plt, configurations, bench, first=95, step=0.01), rootdir,
+            #          "gc_mark_batches_95plus_" + bench + ".png")
+            # chart_md(md_file, gc_sweep_batch_time_chart(plt, configurations, bench), rootdir,
+            #          "gc_sweep_batches_" + bench + ".png")
+            # chart_md(md_file, gc_sweep_batch_time_chart(plt, configurations, bench, first=95, step=0.01), rootdir,
+            #          "gc_sweep_batches_95plus_" + bench + ".png")
             if size_charts:
                 for p in interesting_percentiles:
                     chart_md(md_file, size_compare_chart_gc_mark(plt, configurations, bench, p), rootdir,
@@ -1261,11 +1261,11 @@ def write_md_file(rootdir, md_file, configurations, benchmarks, warmup, gc_chart
         if run >= 0:
             # chart_md(md_file, example_run_plot(plt, configurations, bench, run, 1000), rootdir,
             #          "example_run_last1000_" + str(run) + "_" + bench + ".png")
-            chart_md(md_file, example_run_plot(plt, configurations, bench, run), rootdir,
-                     "example_run_full_" + str(run) + "_" + bench + ".png")
+            # chart_md(md_file, example_run_plot(plt, configurations, bench, run), rootdir,
+            #          "example_run_full_" + str(run) + "_" + bench + ".png")
             for conf in configurations:
-                chart_md(md_file, percentiles_chart_runs(plt, conf, bench, warmup), rootdir, "percentile_" + bench + "_conf" + str(configurations.index(conf))+ ".png")
-                chart_md(md_file, percentiles_chart_runs(plt, conf, bench, warmup, first=95, step=0.01), rootdir, "percentile_95plus_" + bench + "_conf" + str(configurations.index(conf))+ ".png")
+                # chart_md(md_file, percentiles_chart_runs(plt, conf, bench, warmup), rootdir, "percentile_" + bench + "_conf" + str(configurations.index(conf))+ ".png")
+                # chart_md(md_file, percentiles_chart_runs(plt, conf, bench, warmup, first=95, step=0.01), rootdir, "percentile_95plus_" + bench + "_conf" + str(configurations.index(conf))+ ".png")
                 # chart_md(md_file, example_all_runs_plot(plt, conf, bench, 1000), rootdir,
                 #          "example_allruns_last1000_conf" + str(configurations.index(conf)) + "_" + bench + ".png")
                 # chart_md(md_file, example_all_runs_plot(plt, conf, bench), rootdir,
