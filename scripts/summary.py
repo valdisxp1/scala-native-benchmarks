@@ -1024,14 +1024,14 @@ def gc_gantt_chart(plt, conf, bench, data, only_batches = False):
     plt.xlabel("Time since start")
     plt.xticks([])
     plt.title(conf + " " + bench + " last garbage collection")
-    plt.legend(handles=[
-                        # (mpatches.Patch(color='black', label='collection')),
-                        (mpatches.Patch(color='red', label='mark')),
-                        (mpatches.Patch(color='blue', label='sweep')),
-                        (mpatches.Patch(color='green', label='coalesce')),
-                        # (mpatches.Patch(color='grey', label='mark waiting')),
-                        # (mpatches.Patch(color='yellow', label='sync')),
-                        ])
+    # plt.legend(handles=[
+    #                     # (mpatches.Patch(color='black', label='collection')),
+    #                     (mpatches.Patch(color='red', label='mark')),
+    #                     (mpatches.Patch(color='blue', label='sweep')),
+    #                     (mpatches.Patch(color='green', label='coalesce')),
+    #                     # (mpatches.Patch(color='grey', label='mark waiting')),
+    #                     # (mpatches.Patch(color='yellow', label='sync')),
+    #                     ])
 
     return plt
 
